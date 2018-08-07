@@ -71,9 +71,9 @@ dataset = read_csv('electricity_hourly.csv', header=0, index_col=0)
 dataset.fillna(0, inplace=True)
 values = dataset.values
 # ensure all data is float
-# values = values.astype('float32')
+#values = values.astype('float32')
 # frame as supervised learning
-reframed = reframe(values, input_window_length, output_window_length, stride_size, n_i)
+reframed = reframe(values, input_window_length, output_window_length, stride_size, n_i).astype('float32')
 print(reframed.shape)
 print(np.sum(reframed[:,:,0]))
 v_i = np.asarray([ [np.mean(reframed[i,:,0]) + 1] for i in range(reframed.shape[0])])
@@ -81,7 +81,7 @@ np.save('vi-all.npy', v_i)
 #np.save('vi-19999.npy', v_i)
 #np.save('vi-10000.npy', v_i)
 #np.save('vi-1000.npy', v_i)
-reframed[:,:,0] = reframed[:,:,0] / v_i
+reframed[:,:,0] = (reframed[:,:,0] / v_i)
 print(np.sum(reframed[:,:,0]))
 ''' no longer needed, but a fancy method
 # inspired by https://stackoverflow.com/questions/20265229/rearrange-columns-of-numpy-2d-array

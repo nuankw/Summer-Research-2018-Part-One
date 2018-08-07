@@ -150,44 +150,56 @@ model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=6
 # ============================================================
 # predict
 
-def rmse_metrics(y_true, mean):
+def rmse_metrics(y_true, mean, vi):
     # mean = tf.expand_dims(mean, axis = 1)
     # print("in nd: mean.shape: ", mean.shape)
     print("mean.shape", mean.shape)
-    return math.sqrt(np.mean(np.square(mean-y_true)))/(np.mean(np.absolute(y_true)))
+    print("y_true.shape", y_true.shape)
+    print("vi.shape", vi.shape)
+    y_true = y_true * vi
+    mean = mean * vi
+    denom = np.mean(np.absolute(y_true))
+    if (denom == 0.0):
+        denom = -1.0
+    return math.sqrt(np.mean(np.square(mean-y_true)))/denom
 
-def nd_metrics(y_true, mean):
-    return np.sum(np.absolute(mean-y_true))/np.sum(np.absolute(y_true))
+def nd_metrics(y_true, mean, vi):
+    y_true = y_true * vi
+    mean = mean * vi
+    denom = np.sum(np.absolute(y_true))
+    if (denom == 0.0):
+        denom = -1.0
+    return np.sum(np.absolute(mean-y_true))/denom
 
-n_epochs = 1;
+
 test_main_input = data[N:,:,0:4] # ground truth and covariates
 test_aux_input = np.array(data[N:,:,4], dtype='int32') # the one-hot position
 #test_aux_input = (np.arange(n_dims) == test_aux_input[...,None]-1).astype(int)
 test_y = data[N:,:,0].reshape(-1, window_length, 1)
-test_mainin_pred = test_main_input
-nd = np.zeros(n_epochs)
-rmse = np.zeros(n_epochs)
+test_pred = np.copy(test_main_input)
 print('====== test data: ======')
 print(test_main_input.shape, test_aux_input.shape)
 test_vi = v_i[N:, :]
 batch_size = 64
 n_batch = (n_samples - N) // batch_size
-#for i in range( n_batch ):
-for i in range( 1 ): # just for test
+nd = np.zeros(n_batch)
+rmse = np.zeros(n_batch)
+for i in range( n_batch ):
+#for i in range( 100,101 ): # just for test
     print('batch number: ', i+1)
-    for j in range(output_window_length):
-        print("prediction round: (of 24) ", j+1)
-        this_batch_predict = model.predict([test_mainin_pred[i*64:(i+1)*64,:input_window_length + j, 0], test_main_input[i*64:(i+1)*64,:input_window_length + j,:]],batch_size = 64, verbose=1)
-        this_batch_mean = this_batch_predict[:,:,0] * test_vi[i*64:(i+1)*64 ,:]
-        test_mainin_pred[i*64:(i+1)*64,:input_window_length + j, 0] = this_batch_mean
-        print("this_batch_predict.shape", this_batch_predict.shape)
+    for j in range(output_window_length+1):
+        #print("prediction round: (of 24) ", j+1)
+        this_batch_predict = model.predict([test_aux_input[i*64:(i+1)*64,:input_window_length + j], test_pred[i*64:(i+1)*64,:input_window_length + j,0:4]],batch_size = 64, verbose=0)
+        this_batch_predict = np.asarray(this_batch_predict)
+        #print("this_batch_predict.shape", this_batch_predict.shape)
+        this_batch_mean = this_batch_predict[:,:,0]
+        test_pred[i*64:(i+1)*64,:input_window_length + j, 0] = this_batch_mean
+        #print("this_batch_predict.shape", this_batch_predict.shape)
         #print(this_batch_predict)
-    this_batch_predict = model.predict([test_mainin_pred[i*64:(i+1)*64,:window_length, 0], test_main_input[i*64:(i+1)*64,:window_length + j,:]],batch_size = 64, verbose=1)
-    predict_result = this_batch_predict[:,:,0] * test_vi[i*64:(i+1)*64 ,:] *1.0
-    nd[i*64:(i+1)*64] = nd_metrics(test_main_input[i*64:(i+1)*64, :, 0], predict_result)
-    rmse[i*64:(i+1)*64] = rmse_metrics(test_main_input[i*64:(i+1)*64, :, 0], predict_result)
-    print('nd: : ', np.sum(nd[i*64:(i+1)*64]))
-    print('rmse: : ', np.sum(rmse[i*64:(i+1)*64]))
+    nd[i] = nd_metrics(test_main_input[i*64:(i+1)*64, :, 0], test_pred[i*64:(i+1)*64, :, 0], test_vi[i*64:(i+1)*64])
+    rmse[i] = rmse_metrics(test_main_input[i*64:(i+1)*64, :, 0], test_pred[i*64:(i+1)*64, :, 0], test_vi[i*64:(i+1)*64])
+    print('nd[batch_number]: ', nd[i])
+    print('rmse[batch_number]: ', rmse[i])
     #this_batch_score = model.evaluate([test_aux_input[i*64:(i+1)*64,:,:input_window_length], test_main_input[i*64:(i+1)*64,:,:input_window_length]],this_batch_predict , batch_size = 64 , verbose=1)
     #print(this_batch_score)
     #print('Test loss:', this_batch_score[0])
