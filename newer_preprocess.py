@@ -16,26 +16,26 @@ stride_size = 24
 
 def reframe(data, input_win_size, output_win_size, stride_size, n_i):
     assert (data.shape[1] == n_i)
-    
+
     # how many windows for one series
     n_windows = (data.shape[0] - input_win_size) // stride_size
     window_size = output_win_size + input_win_size
     n_covariates = 3
-    
+
     # with one-hot
     # output = np.zeros((n_windows * n_i, window_size, 1 + n_covariates + n_i))
     # without one-hot
-    output = np.zeros((n_windows * n_i, window_size, 1 + n_covariates + 1), dtype = int)
-    
-    local_age = np.array([x for x in range(window_size)])
+    output = np.zeros((n_windows * n_i, window_size + 1, 1 + n_covariates + 1 + 1), dtype = int)
+
+    local_age = np.array([x for x in range(window_size+1)])
     hour_of_day = local_age % 24
     day_of_week = local_age // 24
-    
+
     # go through one feature over entire series first
-    
+
     for i in range(n_i):
-        # for embedding: 
-        embed_indicator = np.zeros((n_windows, window_size))
+        # for embedding:
+        embed_indicator = np.zeros((n_windows, window_size+1))
         embed_indicator.fill(i+1)
         output[i*n_windows : (i+1) * n_windows,:,4] = embed_indicator
         # ground truth and covariate
@@ -46,12 +46,15 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
             ground_truth = data[j*stride_size:j*stride_size + window_size,i]
             #print(ground_truth)
             #print(ground_truth.shape)
-            output[i*n_windows + j,:,0] = ground_truth
+            output[i*n_windows + j,:-1,0] = ground_truth
             output[i*n_windows + j,:,1] = local_age + j * window_size # age
             output[i*n_windows + j,:,2] = hour_of_day # hour of day
             output[i*n_windows + j,:,3] = day_of_week  # day of week
+            output[i*n_windows + j,1:,5] = ground_truth
             
-            
+
+    print("output:")
+    print(output)
     return output
 ''' comment this line if want to add one-hot embedding to preprocess
         # each feature has a item-dependent one-hot representation
@@ -59,10 +62,10 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
         one_hot[i] = 1
         for k in range(window_size):
             output[i * n_windows + k, :, 4 : 4 + n_i] = one_hot
-            
+
     # return output, one_hot
     return output
-#'''         
+#'''
 # preprocess
 #dataset = read_csv('first1000.csv', header=0, index_col=0)
 #dataset = read_csv('first10000.csv', header=0, index_col=0)
@@ -81,7 +84,10 @@ np.save('vi-all.npy', v_i)
 #np.save('vi-19999.npy', v_i)
 #np.save('vi-10000.npy', v_i)
 #np.save('vi-1000.npy', v_i)
+print("reframed before: ", reframed[-10:, 0:5, 0])
 reframed[:,:,0] = (reframed[:,:,0] / v_i)
+print("reframed after: ", reframed[-10:, 0:5, 0])
+print("v_i: ", v_i[-10:])
 print(np.sum(reframed[:,:,0]))
 ''' no longer needed, but a fancy method
 # inspired by https://stackoverflow.com/questions/20265229/rearrange-columns-of-numpy-2d-array

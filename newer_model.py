@@ -19,15 +19,15 @@ matplotlib.use('TkAgg')
 import math
 #import tf.contrib.distributions.NormalWithSoftplusScale as NORM
 
- 
+
 # load dataset
 #data = np.load('reframed-data-1000.npy')
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-data = data[90000:120000, :, :]
+data = data[90000:100000, :, :]
 v_i = np.load('vi-all.npy')
-v_i = v_i[90000:120000, :]
+v_i = v_i[90000:100000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -54,7 +54,7 @@ N = ((int(n_samples * 2 / 3)) // 64) * 64 # number of samples in train data
 #    output = np.zeros((n_samples,window_length,n_dims))
 #    n_samples_each_f = n_samples // n_dims
 #    for i in range(n_dims):
-#        output[i*n_samples_each_f: (i+1)*n_samples_each_f,:,i] = 1 
+#        output[i*n_samples_each_f: (i+1)*n_samples_each_f,:,i] = 1
 #    return output
 
 
@@ -89,7 +89,7 @@ def sum_log_likelihood(y_true, para_pred):
     print("likelihood.shape: ",likelihood.shape)
     print('==end of custom loss===')
     return K.mean(likelihood)
-    
+
 #aux_in = Input(shape=(input_window_length,n_dims, ), name='aux_input')
 aux_in = Input(shape=(None, ), name='aux_input', dtype='int32')
 
@@ -115,7 +115,7 @@ mean_for_each = TimeDistributed(Dense(1))(lstm_out3)
 #mean = Dense(1)(mean_for_each)
 #print("mean.shape:")
 #print(mean.shape)
-# alternaative: 
+# alternaative:
 # https://stackoverflow.com/questions/47795697/how-to-give-variable-size-images-as-input-in-keras
 
 std_for_each = TimeDistributed(Dense(1, activation='softplus'))(lstm_out3)
@@ -136,11 +136,15 @@ print(model.summary())
 #''' ----------------> uncomment this line to just print model
 # train
 # train set
-train_main_input = data[:N,:, 0:4] # ground truth and covariates
-train_aux_input =  np.array(data[:N,:,4], dtype='int32') # the one-hot position
+train_main_input = data[:N,:-1, 0:4] # ground truth and covariates
+train_aux_input =  np.array(data[:N,:-1,4], dtype='int32') # the one-hot position
 #train_aux_input = (np.arange(n_dims) == train_aux_input[...,None]-1).astype(np.int32, copy=False)
-train_y = data[:N,:,0].reshape(-1, window_length, 1)
+train_y = data[:N,1:,0].reshape(-1, window_length, 1)
 
+print("---train_main_input:---")
+print(train_main_input[-10:, :5, 0])
+print("---train_y:---")
+print(train_main_input[-10:, :5, 0])
 print('====== train data: ======')
 print(train_main_input.shape, train_aux_input.shape)
 
@@ -153,9 +157,9 @@ model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=6
 def rmse_metrics(y_true, mean, vi):
     # mean = tf.expand_dims(mean, axis = 1)
     # print("in nd: mean.shape: ", mean.shape)
-    print("mean.shape", mean.shape)
-    print("y_true.shape", y_true.shape)
-    print("vi.shape", vi.shape)
+    #print("mean.shape", mean.shape)
+    #print("y_true.shape", y_true.shape)
+    #print("vi.shape", vi.shape)
     y_true = y_true * vi
     mean = mean * vi
     denom = np.mean(np.absolute(y_true))
@@ -172,10 +176,10 @@ def nd_metrics(y_true, mean, vi):
     return np.sum(np.absolute(mean-y_true))/denom
 
 
-test_main_input = data[N:,:,0:4] # ground truth and covariates
-test_aux_input = np.array(data[N:,:,4], dtype='int32') # the one-hot position
+test_main_input = data[N:,:-1,0:4] # ground truth and covariates
+test_aux_input = np.array(data[N:,:-1,4], dtype='int32') # the one-hot position
 #test_aux_input = (np.arange(n_dims) == test_aux_input[...,None]-1).astype(int)
-test_y = data[N:,:,0].reshape(-1, window_length, 1)
+test_y = data[N:,1:,0].reshape(-1, window_length, 1)
 test_pred = np.copy(test_main_input)
 print('====== test data: ======')
 print(test_main_input.shape, test_aux_input.shape)
@@ -205,17 +209,5 @@ for i in range( n_batch ):
     #print('Test loss:', this_batch_score[0])
     #print('Test accuracy:', this_batch_score[1])
 #print(parahat.shape)
-#score = 
-
-#test_X = test_X.reshape((test_X.shape[0], test_X.shape[2]))
-# invert scaling for forecast
-#inv_yhat = concatenate((yhat, test_X[:, 1:]), axis=1)
-#inv_yhat = inv_yhat[:,0]
-# invert scaling for actual
-#test_y = test_y.reshape((len(test_y), 1))
-#inv_y = concatenate((test_y, test_X[:, 1:]), axis=1)
-#inv_y = inv_y[:,0]
-# calculate RMSE
-#rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
-#print('Test RMSE: %.3f' % rmse)
+#score =
 #''' # <---------------- corresponds to structure check
