@@ -85,14 +85,20 @@ reframed = reframe(values, input_window_length, output_window_length, stride_siz
 print(reframed.shape)
 print(np.sum(reframed[:,:,0]))
 v_i_g = np.asarray([ [np.mean(reframed[i,:,0]) + 1] for i in range(reframed.shape[0])])
+reframed[:,:,0] = (reframed[:,:,0] / v_i_g)
+reframed[:,:,5] = (reframed[:,:,5] / v_i_g)
+assert reframed.shape[0] == v_i_g.shape[0]
+order = np.arange(0,reframed.shape[0],1)
+np.random.shuffle(order)
+reframed = reframed[order,:,:]
+v_i_g = v_i_g[order,:]
 # v_i_s = np.asarray([ [np.mean(reframed[i,:,5]) + 1] for i in range(reframed.shape[0])])
 np.save('vi-g-all.npy', v_i_g)
 #np.save('vi-19999.npy', v_i)
 #np.save('vi-10000.npy', v_i)
 #np.save('vi-1000.npy', v_i)
 # print("reframed before: ", reframed[-10:, 0:5, 0])
-reframed[:,:,0] = (reframed[:,:,0] / v_i_g)
-reframed[:,:,5] = (reframed[:,:,5] / v_i_g)
+
 #print("reframed after: ", reframed[-10:, 0:5, 0])
 #print("v_i: ", v_i[-10:])
 #print(np.sum(reframed[:,:,0]))
@@ -106,6 +112,7 @@ print(reframed.shape)
 chosen_list = [ (stride_size * x) for x in range(reframed.shape[1]//stride_size + 1)]
 reframed = reframed[:, chosen_list ,:]
 '''
+
 #np.save('reframed-data-1000.npy', reframed)
 #np.save('reframed-data-10000.npy', reframed)
 #np.save('reframed-data-19999.npy', reframed)

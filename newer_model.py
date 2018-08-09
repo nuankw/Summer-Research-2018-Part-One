@@ -25,9 +25,9 @@ import math
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-data = data[90000:100000, :, :]
-v_i = np.load('vi-all.npy')
-v_i = v_i[90000:100000, :]
+#data = data[90000:120000, :, :]
+v_i = np.load('vi-g-all.npy')
+#v_i = v_i[90000:120000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -136,19 +136,14 @@ print(model.summary())
 #''' ----------------> uncomment this line to just print model
 # train
 # train set
-train_main_input = data[:N,:-1, 0:4] # ground truth and covariates
-train_aux_input =  np.array(data[:N,:-1,4], dtype='int32') # the one-hot position
+train_main_input = data[:N,:, 0:4] # ground truth and covariates
+train_aux_input =  np.array(data[:N,:,4], dtype='int32') # the one-hot position
 #train_aux_input = (np.arange(n_dims) == train_aux_input[...,None]-1).astype(np.int32, copy=False)
-train_y = data[:N,1:,0].reshape(-1, window_length, 1)
+train_y = data[:N,:,5].reshape(-1, window_length, 1)
 
-print("---train_main_input:---")
-print(train_main_input[-10:, :5, 0])
-print("---train_y:---")
-print(train_main_input[-10:, :5, 0])
-print('====== train data: ======')
 print(train_main_input.shape, train_aux_input.shape)
 
-model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1, shuffle=True)
+model.fit([train_aux_input,train_main_input], [train_y] , epochs=4, batch_size=64,verbose=1, shuffle=True)
 
 '''''' #----------------> edit this line to train or test model
 # ============================================================
@@ -176,10 +171,10 @@ def nd_metrics(y_true, mean, vi):
     return np.sum(np.absolute(mean-y_true))/denom
 
 
-test_main_input = data[N:,:-1,0:4] # ground truth and covariates
-test_aux_input = np.array(data[N:,:-1,4], dtype='int32') # the one-hot position
+test_main_input = data[N:,:,0:4] # ground truth and covariates
+test_aux_input = np.array(data[N:,:,4], dtype='int32') # the one-hot position
 #test_aux_input = (np.arange(n_dims) == test_aux_input[...,None]-1).astype(int)
-test_y = data[N:,1:,0].reshape(-1, window_length, 1)
+test_y = data[N:,:,5].reshape(-1, window_length, 1)
 test_pred = np.copy(test_main_input)
 print('====== test data: ======')
 print(test_main_input.shape, test_aux_input.shape)
@@ -197,7 +192,7 @@ for i in range( n_batch ):
         this_batch_predict = np.asarray(this_batch_predict)
         #print("this_batch_predict.shape", this_batch_predict.shape)
         this_batch_mean = this_batch_predict[:,:,0]
-        test_pred[i*64:(i+1)*64,:input_window_length + j, 0] = this_batch_mean
+        test_pred[i*64:(i+1)*64,input_window_length + j-1:, 0] = (this_batch_mean[:,input_window_length + j-1:])
         #print("this_batch_predict.shape", this_batch_predict.shape)
         #print(this_batch_predict)
     nd[i] = nd_metrics(test_main_input[i*64:(i+1)*64, :, 0], test_pred[i*64:(i+1)*64, :, 0], test_vi[i*64:(i+1)*64])
