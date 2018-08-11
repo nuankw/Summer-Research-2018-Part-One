@@ -1,4 +1,5 @@
 *.pdf
 *.csv
 *.npy
+nohup.out
 pics/

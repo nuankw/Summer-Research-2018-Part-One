@@ -25,9 +25,9 @@ import math
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-#data = data[90000:120000, :, :]
+data = data[90000:120000, :, :]
 v_i = np.load('vi-g-all.npy')
-#v_i = v_i[90000:120000, :]
+v_i = v_i[90000:120000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -101,12 +101,13 @@ x = Dense(20)(aux_in_full)
 main_in = Input(shape=(None, n_features, ), name="main_input")
 input1 = layers.concatenate([main_in, x])
 lstm_out1 = LSTM(40, return_sequences = True)(input1)
-drop_out1 = Dropout(0.4)(lstm_out1)
+drop_out1 = Dropout(0.2)(lstm_out1)
 lstm_out2 = LSTM(40,  return_sequences = True)(drop_out1)
 drop_out2 = Dropout(0.2)(lstm_out2)
 lstm_out3 = LSTM(40,  return_sequences = True)(lstm_out2)
+drop_out3 = Dropout(0.2)(lstm_out3)
 
-mean_for_each = TimeDistributed(Dense(1))(lstm_out3)
+mean_for_each = TimeDistributed(Dense(1))(drop_out3)
 
 # cannot use Flatten
 #print("mean_for_each.shape:")
@@ -155,16 +156,16 @@ def rmse_metrics(y_true, mean, vi):
     #print("mean.shape", mean.shape)
     #print("y_true.shape", y_true.shape)
     #print("vi.shape", vi.shape)
-    y_true = y_true * vi
-    mean = mean * vi
+    y_true = y_true
+    mean = mean
     denom = np.mean(np.absolute(y_true))
     if (denom == 0.0):
         denom = -1.0
     return math.sqrt(np.mean(np.square(mean-y_true)))/denom
 
 def nd_metrics(y_true, mean, vi):
-    y_true = y_true * vi
-    mean = mean * vi
+    y_true = y_true
+    mean = mean
     denom = np.sum(np.absolute(y_true))
     if (denom == 0.0):
         denom = -1.0
@@ -195,8 +196,8 @@ for i in range( n_batch ):
         test_pred[i*64:(i+1)*64,input_window_length + j-1:, 0] = (this_batch_mean[:,input_window_length + j-1:])
         #print("this_batch_predict.shape", this_batch_predict.shape)
         #print(this_batch_predict)
-    nd[i] = nd_metrics(test_main_input[i*64:(i+1)*64, :, 0], test_pred[i*64:(i+1)*64, :, 0], test_vi[i*64:(i+1)*64])
-    rmse[i] = rmse_metrics(test_main_input[i*64:(i+1)*64, :, 0], test_pred[i*64:(i+1)*64, :, 0], test_vi[i*64:(i+1)*64])
+    nd[i] = nd_metrics(test_main_input[i*64:(i+1)*64, input_window_length:, 0], test_pred[i*64:(i+1)*64, input_window_length:, 0], test_vi[i*64:(i+1)*64])
+    rmse[i] = rmse_metrics(test_main_input[i*64:(i+1)*64, input_window_length:, 0], test_pred[i*64:(i+1)*64, input_window_length:, 0], test_vi[i*64:(i+1)*64])
     print('nd[batch_number]: ', nd[i])
     print('rmse[batch_number]: ', rmse[i])
     #this_batch_score = model.evaluate([test_aux_input[i*64:(i+1)*64,:,:input_window_length], test_main_input[i*64:(i+1)*64,:,:input_window_length]],this_batch_predict , batch_size = 64 , verbose=1)
