@@ -13,6 +13,7 @@ from keras import layers
 import keras.backend as K
 import tensorflow as tf
 from keras import optimizers
+import random
 import math
 #import tf.contrib.distributions.NormalWithSoftplusScale as NORM
 
@@ -142,7 +143,7 @@ train_y = data[:N,:,5].reshape(-1, window_length, 1)
 
 print(train_main_input.shape, train_aux_input.shape)
 
-model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1)
+#model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1)
 
 '''''' #----------------> edit this line to train or test model
 # ============================================================
@@ -183,7 +184,8 @@ rmse = np.zeros(n_batch)
 
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg') # local
+matplotlib.use('Agg') # server
 
 
 def plot(label, prediction,num_plot,k,e): # 1,192  1,192  1,192
@@ -203,15 +205,15 @@ def plot(label, prediction,num_plot,k,e): # 1,192  1,192  1,192
     f.savefig(str(e)+'thEpoch'+str(k)+"thBatch.png")
     plt.close()
 
-n_epoches = 20
+n_epoches = 10
 for e in range(n_epoches):
     model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1)
-    for i in range( n_batch ):
-        print('******\n******\n******\nbatch number: ', i)
+    for i in random.sample(range(n_batch), 10):
+        #print('******\n******\n******\nbatch number: ', i)
         batch_range = range(i*batch_size, (i+1)*batch_size)
         for j in range(output_window_length): # j = [0.23], input_window_length+j = [168,191]
             #=========== index, input, dimension check ====================
-            print('\n========= now predicting the index (start from 0): ',input_window_length+j, '=========')
+            #print('\n========= now predicting the index (start from 0): ',input_window_length+j, '=========')
             #print('which means that the current input is: [0,' + str(input_window_length+j-1) + ']')
             #print('aka. ":'+str(input_window_length+j)+'"')
             main_input = rewritten_input[batch_range,:input_window_length + j,0:4]
@@ -226,13 +228,15 @@ for e in range(n_epoches):
             #========== get prediction for next sequence =================
             rewritten_input[batch_range, input_window_length + j, 0] = pred_result[:, -1 ,0]
             
-        if (i % 100 == 0): 
-            plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0],8,i,e)
+        plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0],8,i,e)
         
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         rmse[i] = rmse_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
-        print('nd[batch_number]: ', nd[i])
-        print('rmse[batch_number]: ', rmse[i])
+        
+        print('batch: ', i)
+        print('nd: ', nd[i])
+        print('rmse: ', rmse[i])
+    
     np.save(str(e)+'thEpochOfND.npy', nd)
     np.save(str(e)+'thEpochOfRMSE.npy', rmse)
      
