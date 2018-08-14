@@ -24,7 +24,7 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
     # with one-hot
     # output = np.zeros((n_windows * n_i, window_size, 1 + n_covariates + n_i))
     # without one-hot
-    output = np.zeros((n_windows * n_i, window_size, 1 + 3 + 1 + 1), dtype = int)
+    output = np.zeros((n_windows * n_i, window_size, 1 + 3 + 1 + 1), dtype = 'float32')
     # 1: ground truth
     # 3: covarates
     # 1: embedding
@@ -32,7 +32,11 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
 
     local_age = np.array([x for x in range(window_size)])
     hour_of_day = local_age % 24
+    hour_of_day = (hour_of_day - np.mean(hour_of_day)) / np.std(hour_of_day)
+    #print('hour of day: ', hour_of_day)
     day_of_week = local_age // 24
+    day_of_week = (day_of_week - np.mean(day_of_week)) / np.std(day_of_week)
+    #print('day_of_week: ', day_of_week)
 
     # go through one feature over entire series first
 
@@ -52,11 +56,13 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
             #print(ground_truth.shape)
             #print(ground_truth_shifted.shape)
             output[i*n_windows + j,:,0] = ground_truth
-            output[i*n_windows + j,:,1] = local_age + j * window_size # age
+            age = local_age + j * window_size
+            output[i*n_windows + j,:,1] = age # age
+
             output[i*n_windows + j,:,2] = hour_of_day # hour of day
             output[i*n_windows + j,:,3] = day_of_week  # day of week
             output[i*n_windows + j,:,5] = ground_truth_shifted # y
-            
+    output[:,:,1] = (output[:,:,1] - np.mean(output[:,:,1])) / np.std(output[:,:,1])
 
     print("output:")
     print(output)
