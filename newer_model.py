@@ -151,9 +151,9 @@ def plot(label,prediction,num_plot,k,e): # 1,192  1,192  1,192
     plt.close()
 
 n_epoches = 10
-selection = random.sample(range(n_batch), 3)
+selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
-    model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1)
+    model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1, shuffle=True)
     for i in selection:
         batch_range = range(i*batch_size, (i+1)*batch_size)
         for j in range(output_window_length): # j = [0.23], input_window_length+j = [168,191]
@@ -170,8 +170,9 @@ for e in range(n_epoches):
             # from (64,168) to (64,191)
             #=========== make the prediction ==============================
             pred_result = model.predict_on_batch([aux_input, main_input])
-            #========== get prediction for next sequence =================
+            #========== get prediction for next sequence ==================
             rewritten_input[batch_range, input_window_length + j, 0] = pred_result[:, -1 ,0]
+            #========== draw the prediction ===============================
             if (j == output_window_length -1):
                 plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0],8,i,e)
         
