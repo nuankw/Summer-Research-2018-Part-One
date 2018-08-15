@@ -18,6 +18,31 @@ import math
 #import tf.contrib.distributions.NormalWithSoftplusScale as NORM
 
 
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+#matplotlib.use('TkAgg') # local
+#matplotlib.use('Agg') # server
+
+
+def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
+    x = np.arange(192)
+    f = plt.figure()
+    base = num_plot*100+10
+    for i in range(num_plot):
+        label_temp = label[i].reshape([window_length,]) * vi[i]
+        pred_temp = prediction[i].reshape([window_length,]) * vi[i]
+        plt.subplot(base+i+1)
+        plt.plot(x,label_temp, color='b')
+        plt.plot(x,pred_temp, color='r')        
+        plt.axvline(168, color='k')
+    #plt.pause(5)
+#    plot.show()
+    print('saving...')
+    f.savefig(str(e)+'thEpoch'+str(k)+"thBatch.png")
+    plt.close()
+
+
 # load dataset
 #data = np.load('reframed-data-1000.npy')
 #data = np.load('reframed-data-10000.npy')
@@ -126,35 +151,12 @@ n_batch = (n_samples - N) // batch_size
 nd = np.zeros(n_batch)
 rmse = np.zeros(n_batch)
 
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-#matplotlib.use('TkAgg') # local
-#matplotlib.use('Agg') # server
-
-
-def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
-    x = np.arange(192)
-    f = plt.figure()
-    base = num_plot*100+10
-    for i in range(num_plot):
-        label_temp = label[i].reshape([window_length,]) * vi[i]
-        pred_temp = prediction[i].reshape([window_length,]) * vi[i]
-        plt.subplot(base+i+1)
-        plt.plot(x,label_temp, color='b')
-        plt.plot(x,pred_temp, color='r')        
-        plt.axvline(168, color='k')
-    #plt.pause(5)
-#    plot.show()
-    print('saving...')
-    f.savefig(str(e)+'thEpoch'+str(k)+"thBatch.png")
-    plt.close()
-
 n_epoches = 8
 #selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
     print('epoch: ',e, '/', n_epoches)
     model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=0, shuffle=True)
+    model.save_weights(str(e)+'th_Epoch_weights.h5')
     for i in range(n_batch):
         batch_range = range(i*batch_size, (i+1)*batch_size)
         for j in range(output_window_length): # j = [0.23], input_window_length+j = [168,191]
@@ -174,7 +176,7 @@ for e in range(n_epoches):
             #========== get prediction for next sequence ==================
             rewritten_input[batch_range, input_window_length + j, 0] = pred_result[:, -1 ,0]
             #========== draw the prediction ===============================
-        if (i % 100 == 0):
+        if (i % 400 == 0):
             plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8], 8,i,e)
     
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
@@ -185,7 +187,6 @@ for e in range(n_epoches):
     
     np.save(str(e)+'thEpochOfND.npy', nd)
     np.save(str(e)+'thEpochOfRMSE.npy', rmse)
-     
 
 
 #''' # <---------------- corresponds to structure check
