@@ -13,7 +13,7 @@ from keras import layers
 import keras.backend as K
 import tensorflow as tf
 from keras import optimizers
-import random
+#import random
 import math
 #import tf.contrib.distributions.NormalWithSoftplusScale as NORM
 
@@ -23,9 +23,9 @@ import math
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-data = data[200000:210000, :, :]
+#data = data[0:10000, :, :]
 v_i = np.load('vi-g-all.npy')
-v_i = v_i[200000:210000, :]
+#v_i = v_i[0:10000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -38,7 +38,7 @@ n_dims = 370
 input_embed_dim = 370
 output_embed_dim = 20
 n_samples = data.shape[0]
-N = ((int(n_samples * 2 / 3)) // 64) * 64 # number of samples in train data
+N = ((int(n_samples * 0.9)) // 64) * 64 # number of samples in train data
 
 def log_gaussian(x, mean, std):
     dist = tf.contrib.distributions.NormalWithSoftplusScale(mean,std)
@@ -132,29 +132,29 @@ import matplotlib.pyplot as plt
 matplotlib.use('Agg') # server
 
 
-def plot(label,prediction,num_plot,k,e): # 1,192  1,192  1,192
+def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
     x = np.arange(192)
     f = plt.figure()
     base = num_plot*100+10
     for i in range(num_plot):
-        label_temp = label[i].reshape([window_length,])
-        pred_temp = prediction[i].reshape([window_length,])
+        label_temp = label[i].reshape([window_length,]) * vi[i]
+        pred_temp = prediction[i].reshape([window_length,]) * vi[i]
         plt.subplot(base+i+1)
         plt.plot(x,label_temp, color='b')
-        plt.plot(x,pred_temp, color='r')
-        
-        plt.axvline(168, color='k', linestyle = "dashed")
-		#参考线
+        plt.plot(x,pred_temp, color='r')        
+        plt.axvline(168, color='k')
     #plt.pause(5)
 #    plot.show()
+    print('saving...')
     f.savefig(str(e)+'thEpoch'+str(k)+"thBatch.png")
     plt.close()
 
-n_epoches = 10
-selection = random.sample(range(n_batch), 5)
+n_epoches = 8
+#selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
+    print('epoch: ',e, '/', n_epoches)
     model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1, shuffle=True)
-    for i in selection:
+    for i in range(n_batch):
         batch_range = range(i*batch_size, (i+1)*batch_size)
         for j in range(output_window_length): # j = [0.23], input_window_length+j = [168,191]
             #=========== index, input, dimension check ====================
@@ -173,15 +173,14 @@ for e in range(n_epoches):
             #========== get prediction for next sequence ==================
             rewritten_input[batch_range, input_window_length + j, 0] = pred_result[:, -1 ,0]
             #========== draw the prediction ===============================
-            if (j == output_window_length -1):
-                plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0],8,i,e)
-        
+        if (i % 100 == 0):
+            plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8], 8,i,e)
+    
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         rmse[i] = rmse_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         
-        print('batch: ', i)
-        print('nd: ', nd[i])
-        print('rmse: ', rmse[i])
+    print('nd: ', np.mean(nd))
+    print('rmse: ', np.mean(rmse))
     
     np.save(str(e)+'thEpochOfND.npy', nd)
     np.save(str(e)+'thEpochOfRMSE.npy', rmse)
