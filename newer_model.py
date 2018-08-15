@@ -127,9 +127,10 @@ nd = np.zeros(n_batch)
 rmse = np.zeros(n_batch)
 
 import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 #matplotlib.use('TkAgg') # local
-matplotlib.use('Agg') # server
+#matplotlib.use('Agg') # server
 
 
 def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
@@ -153,7 +154,7 @@ n_epoches = 8
 #selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
     print('epoch: ',e, '/', n_epoches)
-    model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=1, shuffle=True)
+    model.fit([train_aux_input,train_main_input], [train_y] , epochs=1, batch_size=64,verbose=0, shuffle=True)
     for i in range(n_batch):
         batch_range = range(i*batch_size, (i+1)*batch_size)
         for j in range(output_window_length): # j = [0.23], input_window_length+j = [168,191]
