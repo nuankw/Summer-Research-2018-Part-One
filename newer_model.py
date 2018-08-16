@@ -48,9 +48,9 @@ def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-data = data[0:10000, :, :]
+#data = data[0:1000, :, :]
 v_i = np.load('vi-g-all.npy')
-v_i = v_i[0:10000, :]
+#v_i = v_i[0:1000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -63,7 +63,7 @@ n_dims = 370
 input_embed_dim = 370
 output_embed_dim = 20
 n_samples = data.shape[0]
-N = ((int(n_samples * 0.9)) // 64) * 64 # number of samples in train data
+N = ((int(n_samples * 0.95)) // 64) * 64 # number of samples in train data
 
 def log_gaussian(x, mean, std):
     dist = tf.contrib.distributions.NormalWithSoftplusScale(mean,std)
@@ -145,13 +145,13 @@ test_main_input = data[N:,:,0:4] # ground truth and covariates
 test_aux_input = np.array(data[N:,:,4], dtype='int32') # the one-hot position
 test_vi = v_i[N:, :]
 rewritten_input = np.copy(test_main_input)
-batch_size = 64
+batch_size = 32
 n_batch = (n_samples - N) // batch_size
 
 nd = np.zeros(n_batch)
 rmse = np.zeros(n_batch)
 
-n_epoches = 5
+n_epoches = 8
 #selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
     print('epoch: ',e+1, '/', n_epoches)
@@ -179,7 +179,7 @@ for e in range(n_epoches):
         
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         rmse[i] = rmse_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
-        if (nd[i] <= 0.09 or rmse[i] <= 0.45):
+        if (nd[i] <= 0.09 or rmse[i] <= 0.4 or (nd[i]<0.11 and rmse[i]<0.5)):
             plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8],8,i,e)
             print(nd[i], rmse[i])
     print('nd average: ', np.mean(nd))
