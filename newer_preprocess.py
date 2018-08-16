@@ -39,7 +39,7 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
     #print('day_of_week: ', day_of_week)
 
     # go through one feature over entire series first
-
+    minus = 0
     for i in range(n_i):
         # for embedding:
         embed_indicator = np.zeros((n_windows, window_size))
@@ -51,6 +51,9 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
             #print('feature: ' + str(i))
             #print('window: ' + str(j))
             ground_truth = data[j*stride_size:j*stride_size + window_size,i]
+            if (np.sum(ground_truth) == 0):
+                minus = minus + 1
+                continue
             ground_truth_shifted = data[j*stride_size+1:j*stride_size + window_size+1,i]
             #print(ground_truth)
             #print(ground_truth.shape)
@@ -64,9 +67,9 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
             output[i*n_windows + j,:,5] = ground_truth_shifted # y
     output[:,:,1] = (output[:,:,1] - np.mean(output[:,:,1])) / np.std(output[:,:,1])
 
-    print("output:")
-    print(output)
-    return output
+    #print("output:")
+    #print(output)
+    return output[:(-1*minus), :,:]
 ''' comment this line if want to add one-hot embedding to preprocess
         # each feature has a item-dependent one-hot representation
         one_hot = np.zeros((,))
@@ -84,12 +87,13 @@ def reframe(data, input_win_size, output_win_size, stride_size, n_i):
 dataset = read_csv('electricity_hourly.csv', header=0, index_col=0)
 dataset.fillna(0, inplace=True)
 values = dataset.values
+#values = values[~(values==0).all(1)]
 # ensure all data is float
 #values = values.astype('float32')
 # frame as supervised learning
 reframed = reframe(values, input_window_length, output_window_length, stride_size, n_i).astype('float32')
-print(reframed.shape)
-print(np.sum(reframed[:,:,0]))
+#print(reframed.shape)
+#print(np.sum(reframed[:,:,0]))
 v_i_g = np.asarray([ [np.mean(reframed[i,:,0]) + 1] for i in range(reframed.shape[0])])
 reframed[:,:,0] = (reframed[:,:,0] / v_i_g)
 reframed[:,:,5] = (reframed[:,:,5] / v_i_g)
@@ -122,5 +126,5 @@ reframed = reframed[:, chosen_list ,:]
 #np.save('reframed-data-1000.npy', reframed)
 #np.save('reframed-data-10000.npy', reframed)
 #np.save('reframed-data-19999.npy', reframed)
-print(reframed)
+#print(reframed)
 np.save('reframed-data-all.npy', reframed)
