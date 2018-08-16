@@ -48,9 +48,9 @@ def plot(label,prediction,vi, num_plot,k,e): # 1,192  1,192  1,192
 #data = np.load('reframed-data-10000.npy')
 #data = np.load('reframed-data-19999.npy')
 data = np.load('reframed-data-all.npy')
-#data = data[0:10000, :, :]
+data = data[0:10000, :, :]
 v_i = np.load('vi-g-all.npy')
-#v_i = v_i[0:10000, :]
+v_i = v_i[0:10000, :]
 print("data.shape: ", data.shape)
 print("v_i.shape: ", v_i.shape)
 
@@ -151,7 +151,7 @@ n_batch = (n_samples - N) // batch_size
 nd = np.zeros(n_batch)
 rmse = np.zeros(n_batch)
 
-n_epoches = 6
+n_epoches = 5
 #selection = random.sample(range(n_batch), 5)
 for e in range(n_epoches):
     print('epoch: ',e+1, '/', n_epoches)
@@ -179,9 +179,9 @@ for e in range(n_epoches):
         
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         rmse[i] = rmse_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
-        if (nd[i] <= 0.1 | rmse[i] <= 0.5):
-            plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8], 8,i,e)
-    
+        if (nd[i] <= 0.09 or rmse[i] <= 0.45):
+	    plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8],8,i,e)
+	    print(nd[i], rmse[i])
     print('nd average: ', np.mean(nd))
     print('rmse average: ', np.mean(rmse))
     

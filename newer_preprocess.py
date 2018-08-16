@@ -126,5 +126,5 @@ reframed = reframed[:, chosen_list ,:]
 #np.save('reframed-data-1000.npy', reframed)
 #np.save('reframed-data-10000.npy', reframed)
 #np.save('reframed-data-19999.npy', reframed)
-#print(reframed)
+print(reframed)
 np.save('reframed-data-all.npy', reframed)
