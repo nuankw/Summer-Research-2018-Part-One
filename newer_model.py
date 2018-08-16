@@ -180,8 +180,8 @@ for e in range(n_epoches):
         nd[i] = nd_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         rmse[i] = rmse_metrics(test_main_input[batch_range, input_window_length:, 0], rewritten_input[batch_range, input_window_length:, 0], test_vi[batch_range])
         if (nd[i] <= 0.09 or rmse[i] <= 0.45):
-	    plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8],8,i,e)
-	    print(nd[i], rmse[i])
+            plot(test_main_input[i*batch_size:i*batch_size+8,:,0], rewritten_input[i*batch_size:i*batch_size+8,:,0], test_vi[i*batch_size:i*batch_size+8],8,i,e)
+            print(nd[i], rmse[i])
     print('nd average: ', np.mean(nd))
     print('rmse average: ', np.mean(rmse))
     
