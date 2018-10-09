@@ -44,17 +44,6 @@ def plot(label, prediction, vi, num_plot, k, e):  # 1,192  1,192  1,192
     plt.close()
 
 
-# load dataset
-# data = np.load('reframed-data-1000.npy')
-# data = np.load('reframed-data-10000.npy')
-# data = np.load('reframed-data-19999.npy')
-data = np.load('../data/reframed-data-all.npy')
-# data = data[0:1000, :, :]
-v_i = np.load('../data/vi-g-all.npy')
-# v_i = v_i[0:1000, :]
-print("data.shape: ", data.shape)
-print("v_i.shape: ", v_i.shape)
-
 # get the dimension
 input_window_length = 168
 output_window_length = 24
@@ -63,8 +52,6 @@ n_features = 4
 n_dims = 370
 input_embed_dim = 370
 output_embed_dim = 20
-n_samples = data.shape[0]
-N = ((int(n_samples * 0.95)) // 64) * 64  # number of samples in train data
 
 
 def log_gaussian(x, mean, std):
@@ -116,10 +103,10 @@ print(model.summary())
 # ''' ----------------> uncomment this line to just print model
 # train
 # train set
-train_main_input = data[:N, :, 0:4]  # ground truth and covariates
-train_aux_input = np.array(data[:N, :, 4], dtype='int32')  # the one-hot position
-# train_aux_input = (np.arange(n_dims) == train_aux_input[...,None]-1).astype(np.int32, copy=False)
-train_y = data[:N, :, 5].reshape(-1, window_length, 1)
+data = np.load('../data/trainReframed.npy')
+train_main_input = data[:, :, 0:4]  # ground truth and covariates
+train_aux_input = np.array(data[:, :, 4], dtype='int32')  # the one-hot position
+train_y = data[:, :, 5].reshape(-1, window_length, 1)
 
 print(train_main_input.shape, train_aux_input.shape)
 
@@ -148,12 +135,14 @@ def nd_metrics(y_true, mean, vi):
     return np.sum(np.absolute(mean-y_true))/denom
 
 
-test_main_input = data[N:, :, 0:4]  # ground truth and covariates
-test_aux_input = np.array(data[N:, :, 4], dtype='int32')  # the one-hot position
-test_vi = v_i[N:, :]
+# TODO starts here,
+data = np.load('../data/testReframed.npy')
+test_main_input = data[:, :, 0:4]  # ground truth and covariates
+test_aux_input = np.array(data[:, :, 4], dtype='int32')  # the one-hot position
+test_vi = np.load('../data/testVi.npy')
 rewritten_input = np.copy(test_main_input)
 batch_size = 32
-n_batch = (n_samples - N) // batch_size
+n_batch = test_main_input.shape[0] // batch_size
 
 nd = np.zeros(n_batch)
 rmse = np.zeros(n_batch)
