@@ -3,5 +3,4 @@
 *.npy
 *.png
 nohup.out
-pics/
-elect_variable_input.py
+*.png
